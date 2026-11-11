@@ -71,7 +71,7 @@ Kubelet probes are directed to the Pod’s named `http` port. They do not traver
 - The API uses a dedicated ServiceAccount and defaults token automounting to `false`.
 - The repository contains no Secret resource, secret value, token, cloud credential, tenant ID, or client ID.
 - The Deployment contains only an optional external Secret reference. A real secret source is outside V1.
-- The NetworkPolicy selects the API Pods, allows ingress only from approved labeled Pods in approved labeled namespaces on TCP 8080, and allows egress only to a kube-system DNS selector on TCP/UDP 53.
+- The NetworkPolicy selects the API Pods, allows ingress only from approved labeled Pods in the same namespace on TCP 8080, and allows egress only to a kube-system DNS selector on TCP/UDP 53.
 - NetworkPolicy enforcement depends on the target cluster CNI and is not verified locally.
 
 ## Environment contracts

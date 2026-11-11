@@ -9,9 +9,9 @@ class Metrics:
         self._requests: Counter[tuple[str, int]] = Counter()
         self._lock = Lock()
 
-    def record(self, path: str, status: int) -> None:
+    def record(self, route: str, status: int) -> None:
         with self._lock:
-            self._requests[(path, status)] += 1
+            self._requests[(route, status)] += 1
 
     def render(self) -> str:
         with self._lock:
@@ -19,8 +19,8 @@ class Metrics:
                 "# HELP platform_api_http_requests_total Completed HTTP requests.",
                 "# TYPE platform_api_http_requests_total counter",
             ]
-            for (path, status), count in sorted(self._requests.items()):
+            for (route, status), count in sorted(self._requests.items()):
                 lines.append(
-                    f'platform_api_http_requests_total{{path="{path}",status="{status}"}} {count}'
+                    f'platform_api_http_requests_total{{route="{route}",status="{status}"}} {count}'
                 )
         return "\n".join(lines) + "\n"

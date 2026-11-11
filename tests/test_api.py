@@ -70,7 +70,7 @@ def test_metrics_and_logs_contain_operational_data_not_request_secrets(
     with urlopen(f"{base_url}/metrics", timeout=2) as response:
         metrics = response.read().decode()
 
-    assert 'platform_api_http_requests_total{path="/live",status="200"} 1' in metrics
+    assert 'platform_api_http_requests_total{route="/live",status="200"} 1' in metrics
     log_line = json.loads(log_stream.getvalue().splitlines()[0])
     assert log_line["correlation_id"] == "review-456"
     assert "Authorization" not in log_stream.getvalue()
@@ -85,3 +85,22 @@ def test_unknown_route_is_safe_and_correlated(api_server: tuple[str, io.StringIO
     body = json.loads(error.value.read())
     assert body["error"] == "not_found"
     assert body["correlation_id"]
+
+
+def test_unknown_paths_use_a_fixed_operational_label(api_server: tuple[str, io.StringIO, object]) -> None:
+    base_url, log_stream, _ = api_server
+    untrusted_path = "/customers/private-record?token=do-not-log"
+    with pytest.raises(HTTPError) as error:
+        urlopen(f"{base_url}{untrusted_path}", timeout=2)
+    assert error.value.code == 404
+    error.value.read()
+
+    with urlopen(f"{base_url}/metrics", timeout=2) as response:
+        metrics = response.read().decode()
+
+    assert 'platform_api_http_requests_total{route="unknown",status="404"} 1' in metrics
+    assert untrusted_path not in metrics
+    assert "private-record" not in log_stream.getvalue()
+    assert "do-not-log" not in log_stream.getvalue()
+    unknown_log = json.loads(log_stream.getvalue().splitlines()[0])
+    assert unknown_log["route"] == "unknown"

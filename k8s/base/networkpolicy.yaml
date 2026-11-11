@@ -13,10 +13,7 @@ spec:
     - Egress
   ingress:
     - from:
-        - namespaceSelector:
-            matchLabels:
-              platform.example.io/ingress: allowed
-          podSelector:
+        - podSelector:
             matchLabels:
               platform.example.io/access: platform-api
       ports:

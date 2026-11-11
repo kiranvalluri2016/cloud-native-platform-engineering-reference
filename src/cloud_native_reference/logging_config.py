@@ -15,7 +15,7 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "event": record.getMessage(),
         }
-        for field in ("correlation_id", "method", "path", "status", "duration_ms"):
+        for field in ("correlation_id", "method", "route", "status", "duration_ms"):
             value = getattr(record, field, None)
             if value is not None:
                 payload[field] = value

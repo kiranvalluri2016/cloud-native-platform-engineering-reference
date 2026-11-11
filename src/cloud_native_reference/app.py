@@ -15,6 +15,13 @@ from .metrics import Metrics
 
 Logger: TypeAlias = logging.Logger
 
+_ROUTE_LABELS = frozenset({"/live", "/ready", "/api/v1/info", "/metrics"})
+
+
+def route_label(path: str) -> str:
+    """Bound observability labels independently of untrusted request paths."""
+    return path if path in _ROUTE_LABELS else "unknown"
+
 
 def handler_factory(metrics: Metrics, logger: Logger) -> type[BaseHTTPRequestHandler]:
     class ApiHandler(BaseHTTPRequestHandler):
@@ -28,6 +35,7 @@ def handler_factory(metrics: Metrics, logger: Logger) -> type[BaseHTTPRequestHan
             started = time.perf_counter()
             request_id = correlation_id(self.headers.get("X-Correlation-ID"))
             path = self.path.split("?", 1)[0]
+            route = route_label(path)
             status = HTTPStatus.NOT_FOUND
             content_type = "application/json"
             body: bytes
@@ -61,13 +69,13 @@ def handler_factory(metrics: Metrics, logger: Logger) -> type[BaseHTTPRequestHan
             self.end_headers()
             self.wfile.write(body)
 
-            metrics.record(path, int(status))
+            metrics.record(route, int(status))
             logger.info(
                 "request_completed",
                 extra={
                     "correlation_id": request_id,
                     "method": "GET",
-                    "path": path,
+                    "route": route,
                     "status": int(status),
                     "duration_ms": round((time.perf_counter() - started) * 1000, 3),
                 },

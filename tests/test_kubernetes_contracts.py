@@ -71,19 +71,28 @@ def test_deployment_is_hardened_and_probes_target_pod_port() -> None:
 
 
 def test_service_and_network_policy_are_internal_and_explicit() -> None:
-    documents = render_overlay("dev")
-    service = resource(documents, "Service", "platform-api")
-    policy = resource(documents, "NetworkPolicy", "platform-api-restricted")
+    dev = render_overlay("dev")
+    prod = render_overlay("prod")
+    service = resource(dev, "Service", "platform-api")
+    policy = resource(dev, "NetworkPolicy", "platform-api-restricted")
 
     assert service["spec"]["type"] == "ClusterIP"
     assert policy["spec"]["policyTypes"] == ["Ingress", "Egress"]
     ingress_rule = policy["spec"]["ingress"][0]
     assert ingress_rule["ports"] == [{"protocol": "TCP", "port": 8080}]
-    assert ingress_rule["from"][0]["namespaceSelector"]["matchLabels"] == {
-        "platform.example.io/ingress": "allowed"
-    }
+    assert ingress_rule["from"] == [
+        {"podSelector": {"matchLabels": {"platform.example.io/access": "platform-api"}}}
+    ]
+    assert "namespaceSelector" not in ingress_rule["from"][0]
     egress_ports = policy["spec"]["egress"][0]["ports"]
     assert egress_ports == [{"protocol": "UDP", "port": 53}, {"protocol": "TCP", "port": 53}]
+
+    for environment, documents, namespace in (("dev", dev, "platform-dev"), ("prod", prod, "platform-prod")):
+        rendered_policy = resource(documents, "NetworkPolicy", "platform-api-restricted")
+        rendered_namespace = resource(documents, "Namespace", namespace)
+        assert rendered_policy["metadata"]["namespace"] == namespace
+        assert "namespaceSelector" not in rendered_policy["spec"]["ingress"][0]["from"][0]
+        assert "platform.example.io/ingress" not in rendered_namespace["metadata"]["labels"], environment
 
 
 def test_secret_values_and_github_actions_are_not_committed() -> None:

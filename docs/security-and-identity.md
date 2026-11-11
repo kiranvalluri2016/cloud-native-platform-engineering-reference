@@ -8,7 +8,7 @@ The Deployment applies non-root execution, a numeric user/group, `RuntimeDefault
 
 The NetworkPolicy applies to Pods labeled `app.kubernetes.io/name: platform-api`.
 
-- **Ingress:** only TCP 8080 from Pods labeled `platform.example.io/access: platform-api` in namespaces labeled `platform.example.io/ingress: allowed`.
+- **Ingress:** only TCP 8080 from Pods labeled `platform.example.io/access: platform-api` in the same namespace. The rule deliberately has no `namespaceSelector`, preventing DEV and PROD cross-namespace ingress.
 - **Egress:** only DNS TCP/UDP 53 to a selector representing kube-system DNS Pods.
 - **Not represented:** ingress controller traffic, external egress, service mesh traffic, cloud metadata services, DNS provider variance, and CNI enforcement behavior.
 
