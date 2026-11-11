@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-api-config
+  labels:
+    app.kubernetes.io/name: platform-api
+data:
+  APP_NAME: cloud-native-reference-api
+  LOG_LEVEL: INFO
+  RUN_MODE: base
